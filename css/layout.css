@@ -1,0 +1,45 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+.play-btn {
+    color: #ffffff;
+    border: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+    background-color: rgb(51, 122, 183);
+}
+
+.toolbar {
+    padding: 10px;
+}
+
+.container {
+    width: 100%;
+    position: absolute;
+    top: 54.4px;
+    bottom: 0;
+}
+
+.container .graph {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 400px;
+    height: 100%;
+}
+
+.container .event-list {
+    width: 400px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
