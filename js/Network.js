@@ -575,14 +575,106 @@ twaver.Util.registerImageWithFocusBg('vcc', {
     }]
 })
 
-twaver.Node.prototype.getToolTip = function () {
-    var id = this.getId();
-    var inputs = this.getClient('inputs') || [];
+// open
+twaver.Util.registerImageWithFocusBg('open', {
+    w: 80,
+    h: 40,
+    lineWidth: twaver.Defaults.LINE_WIDTH1,
+    lineColor: twaver.Defaults.DEFAULT_COLOR,
+    v: [{
+        shape: 'line',
+        x1: 0,
+        y1: 20,
+        x2: 20,
+        y2: 20,
+        lineColor: twaver.Defaults.TERMINAL_COLOR,
+        lineWidth: twaver.Defaults.LINE_WIDTH2
+    }, {
+        shape: 'circle',
+        cx: 24,
+        cy: 20,
+        r: 4,
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }, {
+        shape: 'circle',
+        cx: 56,
+        cy: 20,
+        r: 4,
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }, {
+        shape: 'line',
+        x1: 60,
+        y1: 20,
+        x2: 80,
+        y2: 20,
+        lineColor: twaver.Defaults.TERMINAL_COLOR,
+        lineWidth: twaver.Defaults.LINE_WIDTH2
+    }, {
+        shape: 'line',
+        x1: 24,
+        y1: 16,
+        x2: 44,
+        y2: 5,
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }, {
+        shape: 'path',
+        data: [48, 16, 48, 20, 52, 20],
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }]
+})
 
-    return `
-    <div>id: ${id}</div>
-    <div>inputs: ${inputs.join(',')}</div>
-    `;
+// Close
+twaver.Util.registerImageWithFocusBg('close', {
+    w: 80,
+    h: 40,
+    lineWidth: twaver.Defaults.LINE_WIDTH1,
+    lineColor: twaver.Defaults.DEFAULT_COLOR,
+    v: [{
+        shape: 'line',
+        x1: 0,
+        y1: 20,
+        x2: 20,
+        y2: 20,
+        lineColor: twaver.Defaults.TERMINAL_COLOR,
+        lineWidth: twaver.Defaults.LINE_WIDTH2
+    }, {
+        shape: 'circle',
+        cx: 24,
+        cy: 20,
+        r: 4,
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }, {
+        shape: 'circle',
+        cx: 56,
+        cy: 20,
+        r: 4,
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }, {
+        shape: 'line',
+        x1: 60,
+        y1: 20,
+        x2: 80,
+        y2: 20,
+        lineColor: twaver.Defaults.TERMINAL_COLOR,
+        lineWidth: twaver.Defaults.LINE_WIDTH2
+    }, {
+        shape: 'line',
+        x1: 24,
+        y1: 24,
+        x2: 48,
+        y2: 30,
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }, {
+        shape: 'path',
+        data: [48, 24, 48, 20, 52, 20],
+        lineColor: twaver.Defaults.DEFAULT_COLOR
+    }]
+})
+
+twaver.Node.prototype.getToolTip = function() {
+    var idStr = this.getClient('id');
+    var inputs = this.getClient('inputs') || [];
+    return "id:" + idStr + "<br/> inputs:" + inputs.join(',');
 }
 
 // 输入
@@ -728,17 +820,19 @@ twaver.LinkLine = function () {
     twaver.LinkLine.superClass.constructor.apply(this, arguments);
     this.s('link.color', twaver.Defaults.LINK_COLOR);
     this.s('link.width', 2);
+
+    this.addPropertyChangeListener(function (e) {
+        var element = e.source;
+        if (e.property === 'C:state') {
+            var state = element.getClient('state');
+            element.setStyle('link.color', state ? 'green' : 'red');
+        }
+    });
 }
 
 twaver.Util.ext('twaver.LinkLine', twaver.ShapeLink, {
     getToolTip: function () {
-        var id = this.getId();
-        var inputs = this.getClient('inputs') || '';
-
-        return `
-        <div>id: ${id}</div>
-        <div>inputs: ${inputs}</div>
-        `;
+        return "id: " + this.getId() + "<br/>inputs: " + this.getClient('lineInput')
     }
 })
 
@@ -769,12 +863,12 @@ twaver.Text = function () {
 twaver.Util.ext('twaver.Text', twaver.Node, {})
 
 // 接地
-twaver.Ground = function () {
-    twaver.Ground.superClass.constructor.apply(this, arguments);
+twaver.GND = function () {
+    twaver.GND.superClass.constructor.apply(this, arguments);
     this.setImage('twaver.image.ground');
 }
 
-twaver.Util.ext('twaver.Ground', twaver.Node, {})
+twaver.Util.ext('twaver.GND', twaver.Node, {})
 
 // Vcc
 twaver.Vcc = function () {
@@ -786,8 +880,29 @@ twaver.Vcc = function () {
 
 twaver.Util.ext('twaver.Vcc', twaver.Node, {})
 
+// Open
+twaver.Open = function () {
+    twaver.Open.superClass.constructor.apply(this, arguments);
+    this.setImage('twaver.image.open');
+}
+
+twaver.Util.ext('twaver.Open', twaver.Node, {})
+
+// Close
+twaver.Close = function () {
+    twaver.Close.superClass.constructor.apply(this, arguments);
+    this.setImage('twaver.image.close');
+}
+
+twaver.Util.ext('twaver.Close', twaver.Node, {})
+
 twaver.vector.SpniceNetwork = function (id) {
     twaver.vector.SpniceNetwork.superClass.constructor.call(this, id);
+    this.currentTime = 0;
+    // id搜索元素
+    this.idFinder = new twaver.QuickFinder(this.getElementBox(), 'id', 'client');
+    // input查询线
+    this.linkFinder = new twaver.QuickFinder(this.getElementBox(), 'lineInput', 'client');
 
     // 图元不可以拖动
     this.setMovableFunction(function () {
@@ -799,11 +914,207 @@ twaver.vector.SpniceNetwork = function (id) {
 }
 
 twaver.Util.ext('twaver.vector.SpniceNetwork', twaver.vector.Network, {
+    intersect: function () {
+        var result = new Array();
+        var obj = {};
+        for (var i = 0; i < arguments.length; i++) {
+            for (var j = 0; j < arguments[i].length; j++) {
+                var str = arguments[i][j];
+                if (!obj[str]) {
+                    obj[str] = 1;
+                }
+                else {
+                    obj[str]++;
+                    if (obj[str] == arguments.length)
+                    {
+                        result.push(str);
+                    }
+                }//end else
+            }//end for j
+        }//end for i
+        return result;
+    },
+
+    findOperatorElement: function(inputs) {
+        if (!inputs) {
+            return [];
+        }
+
+        var _this = this;
+        var datas = this.getElementBox().getDatas().toArray() || [];
+        var result = [];
+        datas.forEach(function (dataItem) {
+            var dataInputs = dataItem.getClient('inputs') || [];
+            var isOperator = dataItem instanceof twaver.Or || dataItem instanceof twaver.Not || dataItem instanceof twaver.And || dataItem instanceof twaver.Time;
+            var setStateStatus = dataItem.getClient('setStateStatus');
+            if (isOperator && _this.intersect(dataInputs, inputs).length > 0 && !setStateStatus) {
+                result.push(dataItem);
+            }
+        })
+        return result;
+    },
+
+    resetSetState: function() {
+        this.getElementBox().forEach(function (element) {
+            element.setClient('setStateStatus', false);
+        })
+    },
+
+    setState: function(element, state) {
+        var setStateStatus = element.getClient('setStateStatus');
+        if (!setStateStatus) {
+            element.setClient('state', state);
+            element.setClient('setStateStatus', true);
+        }
+    },
+
+    setStates: function(inputs, states) {
+        var _this = this;
+
+        // 设置直接关联的input和linkLine
+        inputs.forEach(function (inputId, index) {
+            var inputElement = _this.idFinder.findFirst(inputId);
+            var linkLine = _this.linkFinder.find(inputId).toArray() || [];
+            _this.setState(inputElement, states[index]);
+
+            var lineIds = [];
+            linkLine.forEach(function (linkLineItem) {
+                lineIds.push(linkLineItem.getId());
+                _this.setState(linkLineItem, states[index]);
+            })
+        });
+
+        // 设置对应下一级操作符的
+        var elements = this.findOperatorElement(inputs);
+
+        if (elements && elements.length > 0) {
+            var operatorElements = [];
+
+            elements.forEach(function (element) {
+                if (element instanceof twaver.Or) {
+                    var elementInputs = element.getClient('inputs');
+                    var notGateNum = element.getClient('notGateNum') || 0;
+                    var hasAllResult = elementInputs.filter(function (item) {
+                        var inputState = _this.idFinder.findFirst(item).getClient('state');
+                        return typeof inputState === 'boolean';
+                    }).length === elementInputs.length;
+                    var hasTrueResult = elementInputs.filter(function (item, index) {
+                        var inputState = _this.idFinder.findFirst(item).getClient('state');
+                        if (typeof inputState === 'boolean') {
+                            if (index < notGateNum) {
+                                inputState = !inputState;
+                            }
+                            return inputState;
+                        } else {
+                            return false;
+                        }
+                    }).length !== 0;
+
+                    var result = false;
+                    elementInputs.forEach(function (inputId, index) {
+                        var inputState = _this.idFinder.findFirst(inputId).getClient('state');
+                        if (typeof inputState === 'boolean') {
+                            if (index < notGateNum) {
+                                result = result || !inputState;
+                            } else {
+                                result = result || inputState;
+                            }
+                        }
+                    })
+                    if (hasAllResult || hasTrueResult) {
+                        _this.setState(element, result);
+                        operatorElements.push(element);
+                    }
+                } else if (element instanceof twaver.And) {
+                    var elementInputs = element.getClient('inputs');
+                    var notGateNum = element.getClient('notGateNum') || 0;
+                    var hasAllResult = elementInputs.filter(function (item) {
+                        var inputState = _this.idFinder.findFirst(item).getClient('state');
+                        return typeof inputState === 'boolean';
+                    }).length === elementInputs.length;
+                    var hasFalseResult = elementInputs.filter(function (item, index) {
+                        var inputState = _this.idFinder.findFirst(item).getClient('state');
+                        if (typeof inputState === 'boolean') {
+                            if (index < notGateNum) {
+                                inputState = !inputState;
+                            }
+                            return !inputState;
+                        } else {
+                            return false;
+                        }
+                    }).length !== 0;
+
+                    var result = true;
+                    elementInputs.forEach(function (inputId, index) {
+                        var inputState = _this.idFinder.findFirst(inputId).getClient('state');
+                        if (typeof inputState === 'boolean') {
+                            if (index < notGateNum) {
+                                result = result && !inputState;
+                            } else {
+                                result = result && inputState;
+                            }
+                        }
+                    })
+                    if (hasAllResult || hasFalseResult) {
+                        _this.setState(element, result);
+                        operatorElements.push(element);
+                    }
+                } else if (element instanceof twaver.Not) {
+                    var elementInput = element.getClient('inputs');
+                    if (elementInput) {
+                        elementInput = elementInput[0];
+                        var inputState = _this.idFinder.findFirst(elementInput).getClient('state');
+                        if (typeof inputState === 'boolean') {
+                            _this.setState(element, !inputState);
+                            operatorElements.push(element);
+                        }
+                    }
+                } else if (element instanceof twaver.Time) {
+                    var elementInput = element.getClient('inputs');
+                    if (elementInput) {
+                        elementInput = elementInput[0];
+                        var inputState = _this.idFinder.findFirst(elementInput).getClient('state');
+                        if (typeof inputState === 'boolean') {
+                            var sign = element.getClient('sign');
+                            sign = sign.split('/');
+                            var topLeftTime = parseInt(sign[0]);
+                            var rightBottomTime = parseInt(sign[1]);
+                            if (topLeftTime !== 0) {
+                                setTimeout(function() {
+                                    _this.setState(element, inputState);
+                                    _this.setStates([element.getClient('id')], [inputState]);
+                                }, topLeftTime);
+                            }
+
+                            if (rightBottomTime !== 0) {
+                                setTimeout(function() {
+                                    _this.setState(element, !inputState);
+                                    _this.setStates([element.getClient('id')], [!inputState]);
+                                }, rightBottomTime);
+                            }
+                        }
+                    }
+                } else {
+                    // _this.setState(element, );
+                }
+            })
+
+            if (operatorElements.length > 0) {
+                _this.setStates(operatorElements.map(function (item) {
+                    return item.getClient('id');
+                }), operatorElements.map(function (item) {
+                    return item.getClient('state');
+                }));
+            }
+        }
+    },
+
     startZoomOverView: function () {
-        let zoomOverview = (evt) => {
+        var _this = this;
+        var zoomOverview = function(evt) {
             if (evt.kind === 'validateEnd') {
-                this.removeViewListener(zoomOverview);
-                this.zoomOverview();
+                _this.removeViewListener(zoomOverview);
+                _this.zoomOverview();
             }
         };
         this.addViewListener(zoomOverview);

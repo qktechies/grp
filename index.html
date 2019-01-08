@@ -6,21 +6,105 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <!-- build:css css/combined.css -->
+    <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
+    <link rel="stylesheet" href="css/vendor/transfer.css">
     <link rel="stylesheet" href="css/layout.css">
+    <!-- endbuild -->
 </head>
 <body>
-    <div class="toolbar">
-        <button type="button" class="play-btn">播放</button>
-    </div>
-    <div class="container">
-        <div class="graph" id="graph"></div>
-        <div class="event-list">
 
-        </div>
+<!-- 选择通道模态框 开始 -->
+<div id="channelDialog" class="modal hide fade" style="width:580px;margin-left: -290px" tabindex="-1" role="dialog" aria-labelledby="channelDialog" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>请选择通道</h3>
     </div>
-    <script src="js/vendor/jquery-3.3.1.min.js"></script>
-    <script src="js/vendor/twaver.js"></script>
-    <script src="js/Network.js"></script>
-    <script src="js/index.js"></script>
+    <div class="modal-body" style="overflow: hidden">
+        <div class="form-inline">
+            <label class="checkbox">
+                <input type="checkbox"> 显示变位通道
+            </label>
+            <button class="btn btn-warning" id="analogChannelBtn">模拟量通道选择</button>
+            <button class="btn btn-success" id="switchChannelBtn">开关量通道选择</button>
+        </div>
+        <div class="ty-transfer mt20 ml20" id="channelTransferEffect">
+            <div class="fl ty-transfer-list transfer-list-left">
+                <div class="ty-transfer-list-head">
+                    通道列表
+                </div>
+
+                <div class="ty-transfer-list-body">
+                    <ul class="ty-tree-select">
+                    </ul>
+                </div>
+                <div class="ty-transfer-list-foot">
+                    <div class="ty-tree-div">
+                        <div class="tyc-check-blue fl">
+                            <input type="checkbox" class="transfer-all-check">
+                            <span></span>
+                        </div>
+                        <div class="ty-tree-text">
+                            全选
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="fl ty-transfer-operation">
+                <span class="ty-transfer-btn-toright to-switch">
+                </span>
+                <span class="ty-transfer-btn-toleft to-switch">
+                </span>
+            </div>
+            <div class="fl ty-transfer-list transfer-list-right">
+                <div class="ty-transfer-list-head">
+                    通道列表
+                </div>
+                <div class="ty-transfer-list-body">
+                    <ul class="ty-tree-select">
+
+                    </ul>
+                </div>
+                <div class="ty-transfer-list-foot">
+                    <div class="ty-tree-div">
+                        <div class="tyc-check-blue fl">
+                            <input type="checkbox" class="transfer-all-check" id="tyc-check-blue">
+                            <span></span>
+                        </div>
+                        <div class="ty-tree-text">
+                            全选
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="clearboth">
+            </div>      
+        </div>
+
+    </div>
+    <div class="modal-footer">
+        <label class="checkbox pull-left">
+            <input type="checkbox" id="sameYDisplay"> 同一y轴显示
+        </label>
+        <button class="btn btn-primary" id="highChartDisplayBtn">保存</button>
+    </div>
+</div>
+<!-- 选择通道模态框 结束 -->
+
+<div id="main" class="main">
+
+</div>
+
+<!-- build:js js/combined.js -->
+<script src="js/FunctionBind.js"></script>
+<script src="js/vendor/jquery.min.js"></script>
+<script src="js/vendor/bootstrap.min.js"></script>
+<script src="js/vendor/twaver.js"></script>
+<script src="js/vendor/highcharts.js"></script>
+<script src="js/vendor/Transfer.js"></script>
+<script src="js/Network.js"></script>
+<script src="js/EventList.js"></script>
+<script src="js/index.js"></script>
+<!-- endbuild -->
 </body>
 </html>
