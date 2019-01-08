@@ -108,7 +108,6 @@ $(function () {
      */
     $('#highChartDisplayBtn').on('click', function () {
         $('#channelDialog').modal('hide');
-
         // 获取选中的通道
         var tmpChartData = [];
         $("#channelTransferEffect .transfer-list-right ul.ty-tree-select li").each(function(i, element) {
@@ -119,20 +118,59 @@ $(function () {
     });
 
     /**
+     * 切换显示变位通道
+     */
+    $('#showSuddenChangeSwitch').on('change', function () {
+        var hasSuddenChange = $('#showSuddenChangeSwitch').prop('checked');
+        var channelType = $("#channelSelection").attr('data-channel-type');
+        $.reloadTransferEffectData(window.cfgResultData.filter(function (dataItem) {
+            if (hasSuddenChange) {
+                if (channelType === 'all') {
+                    return hasSuddenChange;
+                } else if(channelType === 'analog') {
+                    return dataItem.isAnalog && hasSuddenChange;
+                } else {
+                    return !dataItem.isAnalog && hasSuddenChange;
+                }
+            } else {
+                if (channelType === 'all') {
+                    return true
+                } else if(channelType === 'analog') {
+                    return dataItem.isAnalog;
+                } else {
+                    return !dataItem.isAnalog;
+                }
+            }
+        }));
+    });
+
+    /**
      * 显示模拟量通道
      */
     $("#analogChannelBtn").on('click', function () {
+        var hasSuddenChange = $('#showSuddenChangeSwitch').prop('checked');
+        $("#channelSelection").attr('data-channel-type', 'analog');
         $.reloadTransferEffectData(window.cfgResultData.filter(function (dataItem) {
-            return dataItem.isAnalog;
-        }))
+            if (hasSuddenChange) {
+                return dataItem.isAnalog && dataItem.hasSuddenChange;
+            } else {
+                return dataItem.isAnalog;
+            }
+        }));
     });
 
     /**
      * 显示开关量通道
      */
     $("#switchChannelBtn").on('click', function () {
+        var hasSuddenChange = $('#showSuddenChangeSwitch').prop('checked');
+        $("#channelSelection").attr('data-channel-type', 'switch');
         $.reloadTransferEffectData(window.cfgResultData.filter(function (dataItem) {
-            return !dataItem.isAnalog;
+            if (hasSuddenChange) {
+                return !dataItem.isAnalog && dataItem.hasSuddenChange;
+            } else {
+                return !dataItem.isAnalog;
+            }
         }))
     });
 
@@ -146,7 +184,7 @@ $(function () {
         channelUl.empty();
         selectedChannelUl.empty();
         data.map(function (dataItem, dataIdx) {
-            var channelLiItem = $('<li></li>').attr('data-index', dataIdx);
+            var channelLiItem = $('<li></li>').attr('data-index', dataItem.index);
             channelLiItem.html('<div class="ty-tree-div">' +
                 '                                <label class="tyue-checkbox-wrapper">' +
                 '                                    <span class="tyue-checkbox">' +
@@ -1296,18 +1334,49 @@ $(function () {
 
         for (var i = 2; i < dataLen; i++) {
             var yData = [];
+            var cfgResultDataItem = cfgResultData[i-2];
             for(var j = 0; j < midData.length; j++) {
                 var yDataItem = midData[j][i];
                 if (i - 2 < analogQuantityCount) {
+                    // 模拟量
                     var fCoefA = cfgResultData[i - 2].fCoefA;
                     var fCoefB = cfgResultData[i - 2].fCoefB;
                     yDataItem = fCoefA * yDataItem + fCoefB;
                 } else {
+                    // 开关量
                     yDataItem = parseInt(yDataItem);
                 }
                 yData.push([midData[j][1], yDataItem]);
             }
-            cfgResultData[i-2].data = yData;
+            cfgResultDataItem.data = yData;
+
+            var hasSuddenChange = false;
+            if (i - 2 < analogQuantityCount) {
+                // 模拟量
+
+                for(var j = 1; j < yData.length; j++) {
+                    var currentData = yData[j][1];
+                    var preData = yData[j-1][1];
+                    if (Math.abs((currentData - preData) / preData) >= 0.1) {
+                        hasSuddenChange = true;
+                        break;
+                    }
+                }
+            } else {
+                // 开关量
+                var tmpVar;
+                yData.map(function (yDataItem, idx) {
+                    if (idx === 0) {
+                        tmpVar = yDataItem[1]
+                    } else if (tmpVar !== yDataItem[1]) {
+                        hasSuddenChange = true;
+                        return false;
+                    }
+                });
+            }
+
+            cfgResultDataItem.index = i - 2;
+            cfgResultDataItem.hasSuddenChange = hasSuddenChange;
         }
 
         $.loadChartData(cfgResultData);
